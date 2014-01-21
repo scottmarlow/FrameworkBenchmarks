@@ -70,12 +70,56 @@
 			<artifactId>jboss-logging</artifactId>
 			<scope>provided</scope>
 		</dependency>
-		
+
 	</dependencies>
 
 	<build>
 		<finalName>${project.artifactId}</finalName>
 		<plugins>
+			<plugin>
+				<groupId>org.wildfly.plugins</groupId>
+				<artifactId>wildfly-maven-plugin</artifactId>
+				<version>1.0.0.Beta1</version>
+				<executions>
+					<execution>
+						<id>deploy-mysql-driver</id>
+						<phase>package</phase>
+						<goals>
+							<goal>deploy-artifact</goal>
+						</goals>
+						<configuration>
+							<groupId>mysql</groupId>
+							<artifactId>mysql-connector-java</artifactId>
+							<name>mysql.jar</name>
+						</configuration>
+					</execution>
+					<execution>
+						<id>add-datasource</id>
+						<phase>package</phase>
+						<goals>
+							<goal>add-resource</goal>
+						</goals>
+						<configuration>
+							<address>subsystem=datasources,data-source=helloWorldMySql</address>
+							<resources>
+								<resource>
+									<properties>
+										<jta>true</jta>
+										<connection-url>jdbc:mysql://localhost:3306/hello_world</connection-url>
+										<jndi-name>java:jboss/datasources/helloWorldMySql</jndi-name>
+										<enabled>true</enabled>
+										<enable>true</enable>
+										<user-name>benchmarkdbuser</user-name>
+										<password>benchmarkdbpass</password>
+										<driver-name>mysql.jar</driver-name>
+										<use-ccm>false</use-ccm>
+									</properties>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<artifactId>maven-war-plugin</artifactId>
 				<version>${version.war.plugin}</version>
@@ -95,88 +139,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
-	<profiles>
-		<profile>
-			<id>benchmark</id>
-			<build>
-				<plugins>
-					<plugin>
-						<artifactId>maven-war-plugin</artifactId>
-						<version>${version.war.plugin}</version>
-						<configuration>
-							<failOnMissingWebXml>false</failOnMissingWebXml>
-							<outputDirectory>${project.build.directory}/wildfly-${version.wildfly}/standalone/deployments</outputDirectory>
-						</configuration>
-					</plugin>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-dependency-plugin</artifactId>
-						<version>2.8</version>
-						<executions>
-							<execution>
-								<phase>initialize</phase>
-								<id>unpack-wildfly-server</id>
-								<goals>
-									<goal>unpack</goal>
-								</goals>
-								<configuration>
-									<artifactItems>
-										<artifactItem>
-											<groupId>org.wildfly</groupId>
-											<artifactId>wildfly-dist</artifactId>
-											<version>${version.wildfly}</version>
-											<type>zip</type>
-											<overWrite>false</overWrite>
-											<outputDirectory>${project.build.directory}</outputDirectory>
-										</artifactItem>
-									</artifactItems>
-								</configuration>
-							</execution>
-							<execution>
-								<phase>initialize</phase>
-								<id>copy-mysql-driver</id>
-								<goals>
-									<goal>copy</goal>
-								</goals>
-								<configuration>
-									<artifactItems>
-										<artifactItem>
-											<groupId>mysql</groupId>
-											<artifactId>mysql-connector-java</artifactId>
-											<version>${version.mysql.connector}</version>
-											<type>jar</type>
-											<outputDirectory>${project.build.directory}/wildfly-${version.wildfly}/standalone/deployments</outputDirectory>
-										</artifactItem>
-									</artifactItems>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<artifactId>maven-resources-plugin</artifactId>
-						<version>2.6</version>
-						<executions>
-							<execution>
-								<phase>initialize</phase>
-								<id>copy-mysql-datasource</id>
-								<goals>
-									<goal>copy-resources</goal>
-								</goals>
-								<configuration>
-									<outputDirectory>${project.build.directory}/wildfly-${version.wildfly}/standalone/deployments</outputDirectory>
-									<resources>
-										<resource>
-											<directory>${basedir}/server-resources/datasources</directory>
-											<filtering>true</filtering>
-										</resource>
-									</resources>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
 </project>
